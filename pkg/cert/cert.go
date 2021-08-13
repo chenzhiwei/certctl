@@ -72,7 +72,7 @@ func NewCACertKey(duration time.Duration, sub, san, usage string, bits int) ([]b
 	if len(altNames.DNSNames) != 0 {
 		template.DNSNames = altNames.DNSNames
 	} else {
-		template.DNSNames = []string{subject.CommonName}
+		template.DNSNames = []string{strings.ToLower(subject.CommonName)}
 	}
 
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.Public(), key)
@@ -94,6 +94,7 @@ func NewCACertKey(duration time.Duration, sub, san, usage string, bits int) ([]b
 }
 
 func getAltNames(s string) *AltNames {
+	s = strings.ToLower(s)
 	altNames := &AltNames{}
 	hosts := strings.Split(s, ",")
 	for _, host := range hosts {
@@ -101,9 +102,13 @@ func getAltNames(s string) *AltNames {
 			continue
 		}
 		if ip := net.ParseIP(host); ip != nil {
-			altNames.IPAddrs = append(altNames.IPAddrs, ip)
+			if !containsIP(altNames.IPAddrs, ip) {
+				altNames.IPAddrs = append(altNames.IPAddrs, ip)
+			}
 		} else {
-			altNames.DNSNames = append(altNames.DNSNames, host)
+			if !containString(altNames.DNSNames, host) {
+				altNames.DNSNames = append(altNames.DNSNames, host)
+			}
 		}
 	}
 
@@ -169,4 +174,22 @@ func getKeyUsage(usage string) (x509.KeyUsage, error) {
 	}
 
 	return keyUsage, nil
+}
+
+func containString(elements []string, element string) bool {
+	for _, item := range elements {
+		if element == item {
+			return true
+		}
+	}
+	return false
+}
+
+func containsIP(elements []net.IP, element net.IP) bool {
+	for _, item := range elements {
+		if element.String() == item.String() {
+			return true
+		}
+	}
+	return false
 }

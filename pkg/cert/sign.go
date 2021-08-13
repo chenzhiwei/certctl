@@ -2,6 +2,7 @@ package cert
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
+func NewSignedCertKey(caCert *x509.Certificate, caKey crypto.Signer, certInfo *CertInfo, rsaKeySize int, isCA bool) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {
 		return nil, nil, err
@@ -25,7 +26,7 @@ func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 		KeyUsage:              certInfo.KeyUsage,
 		ExtKeyUsage:           certInfo.ExtKeyUsage,
 		BasicConstraintsValid: true,
-		IsCA:                  true,
+		IsCA:                  isCA,
 		DNSNames:              certInfo.DNSNames,
 		IPAddresses:           certInfo.IPAddrs,
 	}
@@ -34,7 +35,7 @@ func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 		template.DNSNames = []string{strings.ToLower(certInfo.Subject.CommonName)}
 	}
 
-	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.Public(), key)
+	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, caCert, key.Public(), caKey)
 	if err != nil {
 		return nil, nil, err
 	}

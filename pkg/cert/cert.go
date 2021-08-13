@@ -26,53 +26,95 @@ var keyUsageMap = map[string]x509.KeyUsage{
 	"decipherOnly":      x509.KeyUsageDecipherOnly,
 }
 
-type AltNames struct {
-	DNSNames []string
-	IPAddrs  []net.IP
+var extKeyUsageMap = map[string]x509.ExtKeyUsage{
+	"any":                            x509.ExtKeyUsageAny,
+	"serverAuth":                     x509.ExtKeyUsageServerAuth,
+	"clientAuth":                     x509.ExtKeyUsageClientAuth,
+	"codeSigning":                    x509.ExtKeyUsageCodeSigning,
+	"emailProtection":                x509.ExtKeyUsageEmailProtection,
+	"IPSECEndSystem":                 x509.ExtKeyUsageIPSECEndSystem,
+	"IPSECTunnel":                    x509.ExtKeyUsageIPSECTunnel,
+	"IPSECUser":                      x509.ExtKeyUsageIPSECUser,
+	"timeStamping":                   x509.ExtKeyUsageTimeStamping,
+	"OCSPSigning":                    x509.ExtKeyUsageOCSPSigning,
+	"netscapeServerGatedCrypto":      x509.ExtKeyUsageNetscapeServerGatedCrypto,
+	"microsoftServerGatedCrypto":     x509.ExtKeyUsageMicrosoftServerGatedCrypto,
+	"microsoftCommercialCodeSigning": x509.ExtKeyUsageMicrosoftCommercialCodeSigning,
+	"microsoftKernelCodeSigning":     x509.ExtKeyUsageMicrosoftKernelCodeSigning,
 }
 
-func NewCACertKey(duration time.Duration, sub, san, usage string, bits int) ([]byte, []byte, error) {
-	key, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		return nil, nil, err
-	}
+type CertInfo struct {
+	SerialNumber *big.Int
+	Subject      *pkix.Name
+	DNSNames     []string
+	IPAddrs      []net.IP
+	Duration     time.Duration
+	KeyUsage     x509.KeyUsage
+	ExtKeyUsage  []x509.ExtKeyUsage
+}
+
+func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string) (*CertInfo, error) {
+	certInfo := &CertInfo{}
 
 	serialNumber, err := getSerialNumber()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	certInfo.SerialNumber = serialNumber
 
 	subject, err := getSubject(sub)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	certInfo.Subject = subject
 
 	keyUsage, err := getKeyUsage(usage)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	keyUsage |= x509.KeyUsageCertSign
+	certInfo.KeyUsage = keyUsage
+
+	extKeyUsage, err := getExtKeyUsage(extUsage)
+	if err != nil {
+		return nil, err
+	}
+	certInfo.ExtKeyUsage = extKeyUsage
+
+	// is no eku specified, add serverAuth EKU
+	// otherwise users know what eku is and they should responsible for serverAuth EKU
+	if len(certInfo.ExtKeyUsage) == 0 {
+		certInfo.ExtKeyUsage = append(certInfo.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
+	}
+
+	certInfo.Duration = duration
+	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san)
+
+	return certInfo, nil
+}
+
+func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
+	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	now := time.Now()
 	template := x509.Certificate{
-		SerialNumber:          serialNumber,
-		Subject:               *subject,
+		SerialNumber:          certInfo.SerialNumber,
+		Subject:               *certInfo.Subject,
 		NotBefore:             now.UTC(),
-		NotAfter:              now.Add(duration).UTC(),
-		KeyUsage:              keyUsage,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		NotAfter:              now.Add(certInfo.Duration).UTC(),
+		KeyUsage:              certInfo.KeyUsage,
+		ExtKeyUsage:           certInfo.ExtKeyUsage,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
+		DNSNames:              certInfo.DNSNames,
+		IPAddresses:           certInfo.IPAddrs,
 	}
 
-	altNames := getAltNames(san)
-	if len(altNames.IPAddrs) != 0 {
-		template.IPAddresses = altNames.IPAddrs
-	}
-	if len(altNames.DNSNames) != 0 {
-		template.DNSNames = altNames.DNSNames
-	} else {
-		template.DNSNames = []string{strings.ToLower(subject.CommonName)}
+	if len(template.DNSNames) == 0 {
+		template.DNSNames = []string{strings.ToLower(certInfo.Subject.CommonName)}
 	}
 
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.Public(), key)
@@ -91,28 +133,6 @@ func NewCACertKey(duration time.Duration, sub, san, usage string, bits int) ([]b
 	}
 
 	return certBuffer.Bytes(), keyBuffer.Bytes(), err
-}
-
-func getAltNames(s string) *AltNames {
-	s = strings.ToLower(s)
-	altNames := &AltNames{}
-	hosts := strings.Split(s, ",")
-	for _, host := range hosts {
-		if host == "" {
-			continue
-		}
-		if ip := net.ParseIP(host); ip != nil {
-			if !containsIP(altNames.IPAddrs, ip) {
-				altNames.IPAddrs = append(altNames.IPAddrs, ip)
-			}
-		} else {
-			if !containString(altNames.DNSNames, host) {
-				altNames.DNSNames = append(altNames.DNSNames, host)
-			}
-		}
-	}
-
-	return altNames
 }
 
 func getSerialNumber() (*big.Int, error) {
@@ -153,27 +173,94 @@ func getKeyUsage(usage string) (x509.KeyUsage, error) {
 	// ECDSA, ED25519 and RSA subject keys should have the DigitalSignature
 	// RSA subject keys should have the KeyEncipherment
 	keyUsage := x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
-	elements := strings.Split(usage, ",")
-	for _, e := range elements {
-		if e == "" {
+	usages := strings.Split(usage, ",")
+
+	invalid := false
+	var invalidKeyUsages []string
+
+	for _, key := range usages {
+		if key == "" {
 			continue
 		}
-		invalid := true
-		for key := range keyUsageMap {
-			if e == key {
-				invalid = false
+
+		isInvalidKey := true
+		for ku := range keyUsageMap {
+			if strings.ToLower(key) == strings.ToLower(ku) {
+				isInvalidKey = false
+				keyUsage |= keyUsageMap[ku]
 				break
 			}
 		}
 
-		if invalid {
-			return 0, fmt.Errorf("Invalid keyUsage: %s", e)
+		if isInvalidKey {
+			invalid = true
+			invalidKeyUsages = append(invalidKeyUsages, key)
 		}
+	}
 
-		keyUsage |= keyUsageMap[e]
+	if invalid {
+		return 0, fmt.Errorf("Invalid keyUsage: %s", strings.Join(invalidKeyUsages, ","))
 	}
 
 	return keyUsage, nil
+}
+
+func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
+	var extKeyUsages []x509.ExtKeyUsage
+	usages := strings.Split(usage, ",")
+
+	invalid := false
+	var invalidExtKeyUsages []string
+
+	for _, key := range usages {
+		if key == "" {
+			continue
+		}
+
+		isInvalidKey := true
+		for eku := range extKeyUsageMap {
+			if strings.ToLower(key) == strings.ToLower(eku) {
+				isInvalidKey = false
+				extKeyUsages = append(extKeyUsages, extKeyUsageMap[eku])
+				break
+			}
+		}
+
+		if isInvalidKey {
+			invalid = true
+			invalidExtKeyUsages = append(invalidExtKeyUsages, key)
+		}
+	}
+
+	if invalid {
+		return nil, fmt.Errorf("Invalid ExtKeyUsage: %s", strings.Join(invalidExtKeyUsages, ","))
+	}
+
+	return extKeyUsages, nil
+}
+
+func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
+	var dnsNames []string
+	var ips []net.IP
+
+	s = strings.ToLower(s)
+	hosts := strings.Split(s, ",")
+	for _, host := range hosts {
+		if host == "" {
+			continue
+		}
+		if ip := net.ParseIP(host); ip != nil {
+			if !containsIP(ips, ip) {
+				ips = append(ips, ip)
+			}
+		} else {
+			if !containString(dnsNames, host) {
+				dnsNames = append(dnsNames, host)
+			}
+		}
+	}
+
+	return dnsNames, ips
 }
 
 func containString(elements []string, element string) bool {

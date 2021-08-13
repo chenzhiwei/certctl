@@ -23,7 +23,7 @@ var (
 	generateCmd = &cobra.Command{
 		Use:   "generate",
 		Short: "generate certificate",
-		Args:  cobra.MinimumNArgs(0),
+		Args:  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := runGenerate(); err != nil {
 				return err

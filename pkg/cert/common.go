@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/hex"
+	"encoding/pem"
 	"fmt"
 	"math/big"
 	"net"
@@ -88,6 +90,34 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string) (*Cer
 	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san)
 
 	return certInfo, nil
+}
+
+func ParseCert(certByte []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(certByte)
+	if block == nil {
+		return nil, fmt.Errorf("Failed to parse certificate")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse certificate: %w", err)
+	}
+
+	return cert, nil
+}
+
+func ParseKey(keyByte []byte) (interface{}, error) {
+	block, _ := pem.Decode(keyByte)
+	if block == nil {
+		return nil, fmt.Errorf("Failed to parse private key")
+	}
+
+	pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse public key: %w", err)
+	}
+
+	return pubKey, nil
 }
 
 func getSerialNumber() (*big.Int, error) {
@@ -234,4 +264,15 @@ func containsIP(elements []net.IP, element net.IP) bool {
 		}
 	}
 	return false
+}
+
+func formatSerial(serial *big.Int) string {
+	b := serial.Bytes()
+	buf := make([]byte, 0, 3*len(b))
+	x := buf[1*len(b) : 3*len(b)]
+	hex.Encode(x, b)
+	for i := 0; i < len(x); i += 2 {
+		buf = append(buf, x[i], x[i+1], ':')
+	}
+	return string(buf[:len(buf)-1])
 }

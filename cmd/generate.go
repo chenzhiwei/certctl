@@ -54,17 +54,17 @@ func runGenerate() error {
 		return err
 	}
 
-	certByte, keyByte, err := cert.NewCACertKey(certInfo, size)
+	certBytes, keyBytes, err := cert.NewCACertKey(certInfo, size)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(keyfile, keyByte, 0600); err != nil {
+	if err := os.WriteFile(keyfile, keyBytes, 0600); err != nil {
 		return err
 	}
 	fmt.Printf("Writing new private key to '%s'\n", keyfile)
 
-	if err := os.WriteFile(certfile, certByte, 0644); err != nil {
+	if err := os.WriteFile(certfile, certBytes, 0644); err != nil {
 		return err
 	}
 	fmt.Printf("Writing new certificate to '%s'\n", certfile)

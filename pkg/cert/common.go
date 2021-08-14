@@ -21,7 +21,7 @@ const (
 	PrivateKeyBlockType = "PRIVATE KEY"
 )
 
-var keyUsageMap = map[string]x509.KeyUsage{
+var kuStringToAction = map[string]x509.KeyUsage{
 	"digitalSignature":  x509.KeyUsageDigitalSignature,
 	"contentCommitment": x509.KeyUsageContentCommitment,
 	"keyEncipherment":   x509.KeyUsageKeyEncipherment,
@@ -33,7 +33,7 @@ var keyUsageMap = map[string]x509.KeyUsage{
 	"decipherOnly":      x509.KeyUsageDecipherOnly,
 }
 
-var extKeyUsageMap = map[string]x509.ExtKeyUsage{
+var ekuStringToAction = map[string]x509.ExtKeyUsage{
 	"any":                            x509.ExtKeyUsageAny,
 	"serverAuth":                     x509.ExtKeyUsageServerAuth,
 	"clientAuth":                     x509.ExtKeyUsageClientAuth,
@@ -174,7 +174,7 @@ func getSerialNumber() (*big.Int, error) {
 	return rand.Int(rand.Reader, serialNumberLimit)
 }
 
-// s: /C=/S=/L=/O=/CN=
+// s: /C=/ST=/L=/O=/CN=
 func getSubject(subject string) (*pkix.Name, error) {
 	name := &pkix.Name{}
 	ss := strings.Split(subject, "/")
@@ -184,7 +184,7 @@ func getSubject(subject string) (*pkix.Name, error) {
 			switch info[0] {
 			case "C":
 				name.Country = []string{info[1]}
-			case "S":
+			case "ST":
 				name.Province = []string{info[1]}
 			case "L":
 				name.Locality = []string{info[1]}
@@ -218,10 +218,10 @@ func getKeyUsage(usage string) (x509.KeyUsage, error) {
 		}
 
 		isInvalidKey := true
-		for ku := range keyUsageMap {
-			if strings.ToLower(key) == strings.ToLower(ku) {
+		for k, v := range kuStringToAction {
+			if strings.ToLower(key) == strings.ToLower(k) {
 				isInvalidKey = false
-				keyUsage |= keyUsageMap[ku]
+				keyUsage |= v
 				break
 			}
 		}
@@ -252,10 +252,10 @@ func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
 		}
 
 		isInvalidKey := true
-		for eku := range extKeyUsageMap {
-			if strings.ToLower(key) == strings.ToLower(eku) {
+		for k, v := range ekuStringToAction {
+			if strings.ToLower(key) == strings.ToLower(k) {
 				isInvalidKey = false
-				extKeyUsages = append(extKeyUsages, extKeyUsageMap[eku])
+				extKeyUsages = append(extKeyUsages, v)
 				break
 			}
 		}

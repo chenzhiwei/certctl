@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var kuMap = map[x509.KeyUsage]string{
+var kuActionToString = map[x509.KeyUsage]string{
 	x509.KeyUsageDigitalSignature:  "Digital Signature",
 	x509.KeyUsageContentCommitment: "Non Repudiation",
 	x509.KeyUsageKeyEncipherment:   "Key Encipherment",
@@ -19,7 +19,7 @@ var kuMap = map[x509.KeyUsage]string{
 	x509.KeyUsageDecipherOnly:      "Decipher Only",
 }
 
-var ekuMap = map[x509.ExtKeyUsage]string{
+var ekuActionToString = map[x509.ExtKeyUsage]string{
 	x509.ExtKeyUsageAny:                            "ANY",
 	x509.ExtKeyUsageServerAuth:                     "TLS Web Server Authentication",
 	x509.ExtKeyUsageClientAuth:                     "TLS Web Client Authentication",
@@ -146,7 +146,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 
 		if cert.KeyUsage != 0 {
 			var ku []string
-			for key, value := range kuMap {
+			for key, value := range kuActionToString {
 				n := key & cert.KeyUsage
 				if n == key {
 					ku = append(ku, value)
@@ -161,7 +161,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 			var eku []string
 			for _, e := range cert.ExtKeyUsage {
 				// handle and ignore unknown EKU
-				for key, value := range ekuMap {
+				for key, value := range ekuActionToString {
 					if key == e {
 						eku = append(eku, value)
 						break

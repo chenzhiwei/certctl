@@ -36,6 +36,24 @@ var ekuActionToString = map[x509.ExtKeyUsage]string{
 	x509.ExtKeyUsageMicrosoftKernelCodeSigning:     "1.3.6.1.4.1.311.61.1.1",
 }
 
+var extensionIDToName = map[string]string{
+	// More extensions here https://oidref.com/2.5.29
+	// Per RFC 5280 section 4.2, MUST recognize extensions
+	// "2.5.29.15": "Key Usage",
+	"2.5.29.32": "Certificate Policies",
+	// "2.5.29.17": "Subject Alternative Name",
+	"2.5.29.19": "Basic Constraints",
+	"2.5.29.30": "Name Constraints",
+	"2.5.29.36": "Policy Constraints",
+	// "2.5.29.37": "Extended Key Usage",
+	"2.5.29.54": "Inhibit anyPolic",
+
+	// Per RFC 5280 section 4.2, SHOULD recognize extensions
+	"2.5.29.35": "Authority Key Identifier",
+	"2.5.29.14": "Subject Key Identifier",
+	"2.5.29.33": "Policy Mappings",
+}
+
 func GetCertOrRequestInfo(bytes []byte) ([]map[string]string, error) {
 	block, _ := pem.Decode(bytes)
 	if block == nil {
@@ -172,6 +190,19 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 			result = append(result, map[string]string{
 				"Extended Key Usage": strings.Join(eku, ", "),
 			})
+		}
+
+		if len(cert.Extensions) > 0 {
+			for _, e := range cert.Extensions {
+				for k, v := range extensionIDToName {
+					if k == e.Id.String() {
+						result = append(result, map[string]string{
+							v: fmt.Sprintf("Critical:%v", e.Critical),
+						})
+						break
+					}
+				}
+			}
 		}
 	}
 

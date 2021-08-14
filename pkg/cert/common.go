@@ -27,7 +27,8 @@ var kuStringToAction = map[string]x509.KeyUsage{
 	"keyEncipherment":   x509.KeyUsageKeyEncipherment,
 	"dataEncipherment":  x509.KeyUsageDataEncipherment,
 	"keyAgreement":      x509.KeyUsageKeyAgreement,
-	"certSign":          x509.KeyUsageCertSign,
+	"keyCertSign":       x509.KeyUsageCertSign,
+	"certSign":          x509.KeyUsageCertSign, // fault tolerant
 	"cRLSign":           x509.KeyUsageCRLSign,
 	"encipherOnly":      x509.KeyUsageEncipherOnly,
 	"decipherOnly":      x509.KeyUsageDecipherOnly,

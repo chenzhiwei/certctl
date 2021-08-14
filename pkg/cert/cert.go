@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-const (
-	CertBlockType       = "CERTIFICATE"
-	RSAKeyBlockType     = "RSA PRIVATE KEY"
-	PrivateKeyBlockType = "PRIVATE KEY"
-)
-
 func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {

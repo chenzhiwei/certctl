@@ -35,83 +35,92 @@ var ekuMap = map[x509.ExtKeyUsage]string{
 	x509.ExtKeyUsageMicrosoftKernelCodeSigning:     "1.3.6.1.4.1.311.61.1.1",
 }
 
-func GetCertInfo(certByte []byte) ([]map[string]string, error) {
-	cert, err := ParseCert(certByte)
+func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
+	certs, err := ParseCerts(certBytes)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []map[string]string
 
-	if cert.Subject.String() != cert.Issuer.String() {
-		result = append(result, map[string]string{
-			"Issuer": cert.Issuer.String(),
-		})
-	}
-
-	if cert.Subject.String() != "" {
-		result = append(result, map[string]string{
-			"Subject": cert.Subject.String(),
-		})
-	}
-
-	var san []string
-	if len(cert.DNSNames) > 0 {
-		san = cert.DNSNames
-	}
-	if len(cert.IPAddresses) > 0 {
-		for _, ip := range cert.IPAddresses {
-			san = append(san, ip.String())
+	index := 1
+	for _, cert := range certs {
+		if len(certs) > 1 {
+			result = append(result, map[string]string{
+				"\n==================": fmt.Sprintf("Certificate Number %d", index),
+			})
+			index = index + 1
 		}
-	}
-	if len(san) > 0 {
-		result = append(result, map[string]string{
-			"Alternative Name": strings.Join(san, ", "),
-		})
-	}
+		if cert.Subject.String() != cert.Issuer.String() {
+			result = append(result, map[string]string{
+				"Issuer": cert.Issuer.String(),
+			})
+		}
 
-	result = append(result, map[string]string{
-		"Is CA": fmt.Sprint(cert.IsCA),
-	})
+		if cert.Subject.String() != "" {
+			result = append(result, map[string]string{
+				"Subject": cert.Subject.String(),
+			})
+		}
 
-	result = append(result, map[string]string{
-		"Serial Number": formatSerial(cert.SerialNumber),
-	})
-	result = append(result, map[string]string{
-		"Effective Date": cert.NotBefore.String(),
-	})
-	result = append(result, map[string]string{
-		"Expiration Date": cert.NotAfter.String(),
-	})
-
-	if cert.KeyUsage != 0 {
-		var ku []string
-		for key, value := range kuMap {
-			n := key & cert.KeyUsage
-			if n == key {
-				ku = append(ku, value)
+		var san []string
+		if len(cert.DNSNames) > 0 {
+			san = cert.DNSNames
+		}
+		if len(cert.IPAddresses) > 0 {
+			for _, ip := range cert.IPAddresses {
+				san = append(san, ip.String())
 			}
 		}
+		if len(san) > 0 {
+			result = append(result, map[string]string{
+				"Alternative Name": strings.Join(san, ", "),
+			})
+		}
 
 		result = append(result, map[string]string{
-			"Key Usage": strings.Join(ku, ", "),
+			"Is CA": fmt.Sprint(cert.IsCA),
 		})
-	}
-	if len(cert.ExtKeyUsage) > 0 {
-		var eku []string
-		for _, e := range cert.ExtKeyUsage {
-			// handle and ignore unknown EKU
-			for key, value := range ekuMap {
-				if key == e {
-					eku = append(eku, value)
-					break
+
+		result = append(result, map[string]string{
+			"Serial Number": formatSerial(cert.SerialNumber),
+		})
+		result = append(result, map[string]string{
+			"Effective Date": cert.NotBefore.String(),
+		})
+		result = append(result, map[string]string{
+			"Expiration Date": cert.NotAfter.String(),
+		})
+
+		if cert.KeyUsage != 0 {
+			var ku []string
+			for key, value := range kuMap {
+				n := key & cert.KeyUsage
+				if n == key {
+					ku = append(ku, value)
 				}
 			}
-		}
 
-		result = append(result, map[string]string{
-			"Extended Key Usage": strings.Join(eku, ", "),
-		})
+			result = append(result, map[string]string{
+				"Key Usage": strings.Join(ku, ", "),
+			})
+		}
+		if len(cert.ExtKeyUsage) > 0 {
+			var eku []string
+			for _, e := range cert.ExtKeyUsage {
+				// handle and ignore unknown EKU
+				for key, value := range ekuMap {
+					if key == e {
+						eku = append(eku, value)
+						break
+					}
+				}
+			}
+
+			result = append(result, map[string]string{
+				"Extended Key Usage": strings.Join(eku, ", "),
+			})
+		}
 	}
 
 	return result, nil

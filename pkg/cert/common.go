@@ -13,6 +13,13 @@ import (
 	"time"
 )
 
+const (
+	CertBlockType       = "CERTIFICATE"
+	ECKEYBlockType      = "EC PRIVATE KEY"
+	RSAKeyBlockType     = "RSA PRIVATE KEY"
+	PrivateKeyBlockType = "PRIVATE KEY"
+)
+
 var keyUsageMap = map[string]x509.KeyUsage{
 	"digitalSignature":  x509.KeyUsageDigitalSignature,
 	"contentCommitment": x509.KeyUsageContentCommitment,
@@ -97,8 +104,32 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA 
 	return certInfo, nil
 }
 
-func ParseCert(certByte []byte) (*x509.Certificate, error) {
-	block, _ := pem.Decode(certByte)
+func ParseCerts(certBytes []byte) ([]*x509.Certificate, error) {
+	var blocks []byte
+	rest := certBytes
+	for {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			return nil, fmt.Errorf("Failed to parse certificate")
+		}
+		blocks = append(blocks, block.Bytes...)
+
+		if len(rest) == 0 {
+			break
+		}
+	}
+
+	certs, err := x509.ParseCertificates(blocks)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse certificate: %w", err)
+	}
+
+	return certs, nil
+}
+
+func ParseCert(certBytes []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(certBytes)
 	if block == nil {
 		return nil, fmt.Errorf("Failed to parse certificate")
 	}
@@ -111,8 +142,8 @@ func ParseCert(certByte []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-func ParseKey(keyByte []byte) (interface{}, error) {
-	block, _ := pem.Decode(keyByte)
+func ParseKey(keyBytes []byte) (interface{}, error) {
+	block, _ := pem.Decode(keyBytes)
 	if block == nil {
 		return nil, fmt.Errorf("Failed to parse private key")
 	}
@@ -123,6 +154,9 @@ func ParseKey(keyByte []byte) (interface{}, error) {
 		// Public-Key Cryptography Standard
 		// for RSA only
 		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	} else if block.Type == ECKEYBlockType {
+		// for EC only
+		key, err = x509.ParseECPrivateKey(block.Bytes)
 	} else {
 		// for all algorithms
 		key, err = x509.ParsePKCS8PrivateKey(block.Bytes)

@@ -117,7 +117,16 @@ func ParseKey(keyByte []byte) (interface{}, error) {
 		return nil, fmt.Errorf("Failed to parse private key")
 	}
 
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	var key interface{}
+	var err error
+	if block.Type == RSAKeyBlockType {
+		// Public-Key Cryptography Standard
+		// for RSA only
+		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	} else {
+		// for all algorithms
+		key, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse public key: %w", err)
 	}

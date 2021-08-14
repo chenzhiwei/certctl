@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	CertBlockType   = "CERTIFICATE"
-	RSAKeyBlockType = "RSA PRIVATE KEY"
+	CertBlockType       = "CERTIFICATE"
+	RSAKeyBlockType     = "RSA PRIVATE KEY"
+	PrivateKeyBlockType = "PRIVATE KEY"
 )
 
 func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {

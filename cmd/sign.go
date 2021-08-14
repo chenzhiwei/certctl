@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
@@ -68,6 +69,11 @@ func runSign() error {
 	caCert, err := cert.ParseCert(caCertBytes)
 	if err != nil {
 		return err
+	}
+
+	// return error if it is an invalid CA keypair
+	if _, err := tls.X509KeyPair(caCertBytes, caKeyBytes); err != nil {
+		return fmt.Errorf("Failed to verify Certificate and Key: %w", err)
 	}
 
 	duration := time.Hour * 24 * time.Duration(certDays)

@@ -64,9 +64,11 @@ func GetCertInfo(certByte []byte) ([]map[string]string, error) {
 			san = append(san, ip.String())
 		}
 	}
-	result = append(result, map[string]string{
-		"Alternative Name": strings.Join(san, ", "),
-	})
+	if len(san) > 0 {
+		result = append(result, map[string]string{
+			"Alternative Name": strings.Join(san, ", "),
+		})
+	}
 
 	result = append(result, map[string]string{
 		"Is CA": fmt.Sprint(cert.IsCA),

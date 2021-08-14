@@ -2,7 +2,6 @@ package cert
 
 import (
 	"bytes"
-	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -11,7 +10,7 @@ import (
 	"time"
 )
 
-func NewSignedCertKey(caCert *x509.Certificate, caKey crypto.Signer, certInfo *CertInfo, rsaKeySize int, isCA bool) ([]byte, []byte, error) {
+func NewSignedCertKey(caCert *x509.Certificate, caKey interface{}, certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {
 		return nil, nil, err
@@ -26,7 +25,7 @@ func NewSignedCertKey(caCert *x509.Certificate, caKey crypto.Signer, certInfo *C
 		KeyUsage:              certInfo.KeyUsage,
 		ExtKeyUsage:           certInfo.ExtKeyUsage,
 		BasicConstraintsValid: true,
-		IsCA:                  isCA,
+		IsCA:                  certInfo.IsCA,
 		DNSNames:              certInfo.DNSNames,
 		IPAddresses:           certInfo.IPAddrs,
 	}
@@ -41,12 +40,12 @@ func NewSignedCertKey(caCert *x509.Certificate, caKey crypto.Signer, certInfo *C
 	}
 
 	certBuffer := bytes.Buffer{}
-	if err := pem.Encode(&certBuffer, &pem.Block{Type: "CERTIFICATE", Bytes: certDERBytes}); err != nil {
+	if err := pem.Encode(&certBuffer, &pem.Block{Type: CertBlockType, Bytes: certDERBytes}); err != nil {
 		return nil, nil, err
 	}
 
 	keyBuffer := bytes.Buffer{}
-	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
+	if err := pem.Encode(&keyBuffer, &pem.Block{Type: RSAKeyBlockType, Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
 		return nil, nil, err
 	}
 

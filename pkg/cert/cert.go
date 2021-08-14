@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	CertBlockType   = "CERTIFICATE"
+	RSAKeyBlockType = "RSA PRIVATE KEY"
+)
+
 func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {
@@ -40,12 +45,12 @@ func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 	}
 
 	certBuffer := bytes.Buffer{}
-	if err := pem.Encode(&certBuffer, &pem.Block{Type: "CERTIFICATE", Bytes: certDERBytes}); err != nil {
+	if err := pem.Encode(&certBuffer, &pem.Block{Type: CertBlockType, Bytes: certDERBytes}); err != nil {
 		return nil, nil, err
 	}
 
 	keyBuffer := bytes.Buffer{}
-	if err := pem.Encode(&keyBuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
+	if err := pem.Encode(&keyBuffer, &pem.Block{Type: RSAKeyBlockType, Bytes: x509.MarshalPKCS1PrivateKey(key)}); err != nil {
 		return nil, nil, err
 	}
 

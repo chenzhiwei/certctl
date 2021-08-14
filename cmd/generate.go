@@ -49,7 +49,7 @@ func init() {
 func runGenerate() error {
 	duration := time.Hour * 24 * time.Duration(days)
 
-	certInfo, err := cert.NewCertInfo(duration, subject, san, keyUsage, extKeyUsage)
+	certInfo, err := cert.NewCertInfo(duration, subject, san, keyUsage, extKeyUsage, true)
 	if err != nil {
 		return err
 	}

@@ -44,6 +44,7 @@ var extKeyUsageMap = map[string]x509.ExtKeyUsage{
 
 type CertInfo struct {
 	SerialNumber *big.Int
+	IsCA         bool
 	Subject      *pkix.Name
 	DNSNames     []string
 	IPAddrs      []net.IP
@@ -52,7 +53,7 @@ type CertInfo struct {
 	ExtKeyUsage  []x509.ExtKeyUsage
 }
 
-func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string) (*CertInfo, error) {
+func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA bool) (*CertInfo, error) {
 	certInfo := &CertInfo{}
 
 	serialNumber, err := getSerialNumber()
@@ -60,6 +61,8 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string) (*Cer
 		return nil, err
 	}
 	certInfo.SerialNumber = serialNumber
+
+	certInfo.IsCA = isCA
 
 	subject, err := getSubject(sub)
 	if err != nil {
@@ -71,7 +74,9 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string) (*Cer
 	if err != nil {
 		return nil, err
 	}
-	keyUsage |= x509.KeyUsageCertSign
+	if isCA {
+		keyUsage |= x509.KeyUsageCertSign
+	}
 	certInfo.KeyUsage = keyUsage
 
 	extKeyUsage, err := getExtKeyUsage(extUsage)
@@ -112,12 +117,12 @@ func ParseKey(keyByte []byte) (interface{}, error) {
 		return nil, fmt.Errorf("Failed to parse private key")
 	}
 
-	pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse public key: %w", err)
 	}
 
-	return pubKey, nil
+	return key, nil
 }
 
 func getSerialNumber() (*big.Int, error) {

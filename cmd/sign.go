@@ -41,7 +41,7 @@ func init() {
 	signCmd.Flags().StringVar(&certSubject, "subject", "", "the certificate subject")
 	signCmd.Flags().StringVar(&certSan, "san", "", "the certificate subject alternate name")
 	signCmd.Flags().StringVar(&certKeyUsage, "usage", "", "the certificate key usage")
-	signCmd.Flags().StringVar(&certExtKeyUsage, "extKeyUsage", "", "the certificate extendedn key usage")
+	signCmd.Flags().StringVar(&certExtKeyUsage, "extusage", "", "the certificate extended key usage")
 	signCmd.Flags().IntVar(&certDays, "days", 365, "the certificate validation period")
 	signCmd.Flags().IntVar(&certSize, "size", 2048, "the certificate RSA private key size")
 	signCmd.Flags().StringVar(&certKeyfile, "key", "certctl-signed.key", "the output key file")

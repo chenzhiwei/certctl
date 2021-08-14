@@ -2,6 +2,7 @@ package cert
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"strings"
 )
@@ -33,6 +34,57 @@ var ekuMap = map[x509.ExtKeyUsage]string{
 	x509.ExtKeyUsageMicrosoftServerGatedCrypto:     "Microsoft Server Gated Crypto",
 	x509.ExtKeyUsageMicrosoftCommercialCodeSigning: "Microsoft Commercial Code Signing",
 	x509.ExtKeyUsageMicrosoftKernelCodeSigning:     "1.3.6.1.4.1.311.61.1.1",
+}
+
+func GetCertOrRequestInfo(bytes []byte) ([]map[string]string, error) {
+	block, _ := pem.Decode(bytes)
+	if block == nil {
+		return nil, fmt.Errorf("Failed to parse certificate or csr")
+	}
+	if block.Type == CertReqBlockType {
+		return GetCertRequestInfo(bytes)
+	} else {
+		return GetCertInfo(bytes)
+	}
+}
+
+func GetCertRequestInfo(bytes []byte) ([]map[string]string, error) {
+	block, _ := pem.Decode(bytes)
+	if block == nil {
+		return nil, fmt.Errorf("Failed to parse certificate request")
+	}
+	if block.Type != CertReqBlockType {
+		return nil, fmt.Errorf("Not a Certificate Request")
+	}
+
+	csr, err := x509.ParseCertificateRequest(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse certificate request")
+	}
+
+	var result []map[string]string
+	if csr.Subject.String() != "" {
+		result = append(result, map[string]string{
+			"Subject": csr.Subject.String(),
+		})
+	}
+
+	var san []string
+	if len(csr.DNSNames) > 0 {
+		san = csr.DNSNames
+	}
+	if len(csr.IPAddresses) > 0 {
+		for _, ip := range csr.IPAddresses {
+			san = append(san, ip.String())
+		}
+	}
+	if len(san) > 0 {
+		result = append(result, map[string]string{
+			"Alternative Name": strings.Join(san, ", "),
+		})
+	}
+
+	return result, nil
 }
 
 func GetCertInfo(certBytes []byte) ([]map[string]string, error) {

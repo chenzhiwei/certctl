@@ -15,6 +15,7 @@ import (
 
 const (
 	CertBlockType       = "CERTIFICATE"
+	CertReqBlockType    = "CERTIFICATE REQUEST"
 	ECKEYBlockType      = "EC PRIVATE KEY"
 	RSAKeyBlockType     = "RSA PRIVATE KEY"
 	PrivateKeyBlockType = "PRIVATE KEY"

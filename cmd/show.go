@@ -30,7 +30,7 @@ func runShow(args []string) error {
 		return err
 	}
 
-	result, err := cert.GetCertInfo(bytes)
+	result, err := cert.GetCertOrRequestInfo(bytes)
 	if err != nil {
 		return err
 	}

@@ -43,31 +43,15 @@ func GetCertInfo(certByte []byte) ([]map[string]string, error) {
 
 	var result []map[string]string
 
-	serialNumber := formatSerial(cert.SerialNumber)
+	if cert.Subject.String() != cert.Issuer.String() {
+		result = append(result, map[string]string{
+			"Issuer": cert.Issuer.String(),
+		})
+	}
 
-	if cert.Subject.CommonName != "" {
+	if cert.Subject.String() != "" {
 		result = append(result, map[string]string{
-			"Common Name": cert.Subject.CommonName,
-		})
-	}
-	if len(cert.Subject.Country) > 0 {
-		result = append(result, map[string]string{
-			"Country": strings.Join(cert.Subject.Country, ", "),
-		})
-	}
-	if len(cert.Subject.Province) > 0 {
-		result = append(result, map[string]string{
-			"Province": strings.Join(cert.Subject.Province, ", "),
-		})
-	}
-	if len(cert.Subject.Locality) > 0 {
-		result = append(result, map[string]string{
-			"Locality": strings.Join(cert.Subject.Locality, ", "),
-		})
-	}
-	if len(cert.Subject.Organization) > 0 {
-		result = append(result, map[string]string{
-			"Organization": strings.Join(cert.Subject.Organization, ", "),
+			"Subject": cert.Subject.String(),
 		})
 	}
 
@@ -87,8 +71,9 @@ func GetCertInfo(certByte []byte) ([]map[string]string, error) {
 	result = append(result, map[string]string{
 		"Is CA": fmt.Sprint(cert.IsCA),
 	})
+
 	result = append(result, map[string]string{
-		"Serial Number": serialNumber,
+		"Serial Number": formatSerial(cert.SerialNumber),
 	})
 	result = append(result, map[string]string{
 		"Effective Date": cert.NotBefore.String(),

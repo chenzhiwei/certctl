@@ -11,8 +11,8 @@ import (
 
 var (
 	showCmd = &cobra.Command{
-		Use:   "show",
-		Short: "show certificate info",
+		Use:   "show cert-or-csr-filepath",
+		Short: "show certificate or certificate request info",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			if err := runShow(args); err != nil {

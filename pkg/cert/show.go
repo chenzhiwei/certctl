@@ -113,6 +113,12 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 
 	var result []map[string]string
 
+	if len(certs) > 1 {
+		result = append(result, map[string]string{
+			fmt.Sprintf("%d certificates found", len(certs)): "",
+		})
+	}
+
 	index := 1
 	for _, cert := range certs {
 		if len(certs) > 1 {

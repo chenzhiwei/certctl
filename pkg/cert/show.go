@@ -212,5 +212,10 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 		}
 	}
 
+	// a certificate can contain too many tings, no need to reinvent the wheel
+	result = append(result, map[string]string{
+		"\nCheck more info with": "openssl x509 -noout -text -in cert-filepath",
+	})
+
 	return result, nil
 }

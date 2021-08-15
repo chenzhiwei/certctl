@@ -102,6 +102,11 @@ func GetCertRequestInfo(bytes []byte) ([]map[string]string, error) {
 		})
 	}
 
+	// a certificate request can contain too many tings, no need to reinvent the wheel
+	result = append(result, map[string]string{
+		"\nCheck more info with": "openssl req -noout -text -in csr-filepath",
+	})
+
 	return result, nil
 }
 

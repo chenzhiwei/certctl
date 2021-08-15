@@ -144,7 +144,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 		}
 		if len(san) > 0 {
 			result = append(result, map[string]string{
-				"Alternative Name": strings.Join(san, ", "),
+				"Subject Alt Name": strings.Join(san, ", "),
 			})
 		}
 

@@ -7,8 +7,11 @@ import (
 )
 
 var (
+	chain bool
+	file  string
+
 	fetchCmd = &cobra.Command{
-		Use:   "fetch [url]",
+		Use:   "fetch url",
 		Short: "Fetch the certificate from url",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -19,6 +22,11 @@ var (
 		},
 	}
 )
+
+func init() {
+	fetchCmd.Flags().BoolVar(&chain, "chain", true, "fetch certificate chain")
+	fetchCmd.Flags().StringVar(&file, "file", "", "save the fetched certificate to a file")
+}
 
 func runFetch(args []string) error {
 	url := args[0]

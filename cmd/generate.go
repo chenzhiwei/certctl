@@ -22,7 +22,7 @@ var (
 
 	generateCmd = &cobra.Command{
 		Use:   "generate",
-		Short: "generate certificate",
+		Short: "generate CA or self-signed certificate",
 		Args:  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := runGenerate(); err != nil {
@@ -44,6 +44,7 @@ func init() {
 	generateCmd.Flags().StringVar(&certfile, "cert", "certctl.crt", "the output cert file")
 
 	generateCmd.Flags().SortFlags = false
+	generateCmd.MarkFlagRequired("subject")
 }
 
 func runGenerate() error {

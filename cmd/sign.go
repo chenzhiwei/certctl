@@ -26,7 +26,8 @@ var (
 
 	signCmd = &cobra.Command{
 		Use:   "sign",
-		Short: "sign certificate",
+		Short: "sign certificate with CA",
+		Args:  cobra.MaximumNArgs(0),
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := runSign(); err != nil {
 				return err
@@ -50,6 +51,9 @@ func init() {
 	signCmd.Flags().StringVar(&caCertfile, "ca-cert", "", "the ca cert file to sign certificate")
 
 	signCmd.Flags().SortFlags = false
+	signCmd.MarkFlagRequired("subject")
+	signCmd.MarkFlagRequired("ca-key")
+	signCmd.MarkFlagRequired("ca-cert")
 }
 
 func runSign() error {

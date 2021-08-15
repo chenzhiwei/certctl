@@ -5,7 +5,7 @@ Manage certificates with ease.
 ## Download
 
 ```
-wget -O certctl https://github.com/chenzhiwei/certctl/releases/latest/certctl
+wget -O certctl https://github.com/chenzhiwei/certctl/releases/latest/download/certctl
 chmod +x certctl
 ./certctl version
 sudo mv certctl /usr/local/bin/

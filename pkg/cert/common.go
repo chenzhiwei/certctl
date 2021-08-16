@@ -317,6 +317,10 @@ func containsIP(elements []net.IP, element net.IP) bool {
 }
 
 func formatSerial(serial *big.Int) string {
+	if serial.String() == "0" {
+		return "0"
+	}
+
 	b := serial.Bytes()
 	buf := make([]byte, 0, 3*len(b))
 	x := buf[1*len(b) : 3*len(b)]

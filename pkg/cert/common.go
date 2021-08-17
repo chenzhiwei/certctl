@@ -182,17 +182,19 @@ func getSubject(subject string) (*pkix.Name, error) {
 	for _, s := range ss {
 		info := strings.Split(s, "=")
 		if len(info) == 2 {
-			switch info[0] {
+			key := strings.TrimSpace(info[0])
+			val := strings.TrimSpace(info[1])
+			switch key {
 			case "C":
-				name.Country = []string{info[1]}
+				name.Country = []string{val}
 			case "ST":
-				name.Province = []string{info[1]}
+				name.Province = []string{val}
 			case "L":
-				name.Locality = []string{info[1]}
+				name.Locality = []string{val}
 			case "O":
-				name.Organization = []string{info[1]}
+				name.Organization = []string{val}
 			case "CN":
-				name.CommonName = info[1]
+				name.CommonName = val
 			}
 		}
 	}
@@ -214,6 +216,7 @@ func getKeyUsage(usage string) (x509.KeyUsage, error) {
 	var invalidKeyUsages []string
 
 	for _, key := range usages {
+		key = strings.TrimSpace(key)
 		if key == "" {
 			continue
 		}
@@ -248,6 +251,7 @@ func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
 	var invalidExtKeyUsages []string
 
 	for _, key := range usages {
+		key = strings.TrimSpace(key)
 		if key == "" {
 			continue
 		}
@@ -281,6 +285,7 @@ func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
 	s = strings.ToLower(s)
 	hosts := strings.Split(s, ",")
 	for _, host := range hosts {
+		host = strings.TrimSpace(host)
 		if host == "" {
 			continue
 		}

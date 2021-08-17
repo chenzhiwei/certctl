@@ -37,7 +37,7 @@ func TestNewCertInfo(t *testing.T) {
 		},
 		{
 			subject:  " CN= root-ca/ C =CN / ST = Beijing  / L= Haidian/ O = Root Inc  ",
-			san:      "localhost,127.0.0.1  ,  localhost,1.1.1.1,  china.com, 127.0.0.1",
+			san:      "DNS:localhost,IP: 127.0.0.1  , DNS: localhost,IP:1.1.1.1,  china.com, 127.0.0.1",
 			usage:    "cRLSign  , keyCertSign  ",
 			extUsage: " clientAuth  ,serverAuth  ",
 			expect: &CertInfo{

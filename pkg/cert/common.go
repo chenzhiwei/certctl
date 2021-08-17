@@ -286,6 +286,9 @@ func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
 	hosts := strings.Split(s, ",")
 	for _, host := range hosts {
 		host = strings.TrimSpace(host)
+		host = strings.TrimLeft(host, "ip:")
+		host = strings.TrimLeft(host, "dns:")
+		host = strings.TrimSpace(host)
 		if host == "" {
 			continue
 		}

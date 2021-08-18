@@ -9,3 +9,6 @@ GOBUILD=CGO_ENABLED=0 go build -trimpath -ldflags \
 build:
 	$(GOBUILD) -o $(BINDIR)/$(NAME)
 	@strip $(BINDIR)/$(NAME) || true
+
+test:
+	go test ./pkg/cert

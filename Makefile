@@ -10,5 +10,11 @@ build:
 	$(GOBUILD) -o $(BINDIR)/$(NAME)
 	@strip $(BINDIR)/$(NAME) || true
 
-test:
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+test: fmt vet
 	go test ./pkg/cert

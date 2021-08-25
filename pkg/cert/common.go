@@ -179,6 +179,10 @@ func getSerialNumber() (*big.Int, error) {
 func getSubject(subject string) (*pkix.Name, error) {
 	name := &pkix.Name{}
 	ss := strings.Split(subject, "/")
+	var country []string
+	var province []string
+	var locality []string
+	var organization []string
 	for _, s := range ss {
 		info := strings.Split(s, "=")
 		if len(info) == 2 {
@@ -186,17 +190,46 @@ func getSubject(subject string) (*pkix.Name, error) {
 			val := strings.TrimSpace(info[1])
 			switch key {
 			case "C":
-				name.Country = []string{val}
+				if val == "" {
+					fmt.Println("No value provided for Subject Attribute C, skipped")
+				} else {
+					country = append(country, val)
+				}
 			case "ST":
-				name.Province = []string{val}
+				if val == "" {
+					fmt.Println("No value provided for Subject Attribute ST, skipped")
+				} else {
+					province = append(province, val)
+				}
 			case "L":
-				name.Locality = []string{val}
+				if val == "" {
+					fmt.Println("No value provided for Subject Attribute L, skipped")
+				} else {
+					locality = append(locality, val)
+				}
 			case "O":
-				name.Organization = []string{val}
+				if val == "" {
+					fmt.Println("No value provided for Subject Attribute O, skipped")
+				} else {
+					organization = append(organization, val)
+				}
 			case "CN":
 				name.CommonName = val
 			}
 		}
+	}
+
+	if len(country) > 0 {
+		name.Country = country
+	}
+	if len(province) > 0 {
+		name.Province = province
+	}
+	if len(locality) > 0 {
+		name.Locality = locality
+	}
+	if len(organization) > 0 {
+		name.Organization = organization
 	}
 
 	if name.CommonName == "" {

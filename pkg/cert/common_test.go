@@ -54,6 +54,24 @@ func TestNewCertInfo(t *testing.T) {
 				ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			},
 		},
+		{
+			subject:  " CN= root-ca/ C = / ST = Beijing  / L= Haidian/ O = Root Inc /O=Union Inc ",
+			san:      "DNS:localhost,IP: 127.0.0.1  , DNS: localhost,IP:1.1.1.1,  china.com, 127.0.0.1",
+			usage:    "cRLSign  , keyCertSign  ",
+			extUsage: " clientAuth  ,serverAuth  ",
+			expect: &CertInfo{
+				Subject: &pkix.Name{
+					CommonName:   "root-ca",
+					Province:     []string{"Beijing"},
+					Locality:     []string{"Haidian"},
+					Organization: []string{"Root Inc", "Union Inc"},
+				},
+				DNSNames:    []string{"localhost", "china.com"},
+				IPAddrs:     []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(1, 1, 1, 1)},
+				KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+				ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+			},
+		},
 	}
 
 	for _, test := range tests {

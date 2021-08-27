@@ -101,7 +101,7 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA 
 	}
 
 	certInfo.Duration = duration
-	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san)
+	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san, subject.CommonName)
 
 	return certInfo, nil
 }
@@ -311,7 +311,7 @@ func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
 	return extKeyUsages, nil
 }
 
-func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
+func getDNSNamesAndIPAddrs(s, cn string) ([]string, []net.IP) {
 	var dnsNames []string
 	var ips []net.IP
 
@@ -333,6 +333,14 @@ func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
 			if !containString(dnsNames, host) {
 				dnsNames = append(dnsNames, host)
 			}
+		}
+	}
+
+	if len(dnsNames) == 0 && len(ips) == 0 {
+		if ip := net.ParseIP(cn); ip != nil {
+			ips = append(ips, ip)
+		} else {
+			dnsNames = append(dnsNames, strings.ToLower(cn))
 		}
 	}
 

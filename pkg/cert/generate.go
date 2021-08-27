@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"strings"
 	"time"
 )
 
@@ -28,10 +27,6 @@ func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 		IsCA:                  true,
 		DNSNames:              certInfo.DNSNames,
 		IPAddresses:           certInfo.IPAddrs,
-	}
-
-	if len(template.DNSNames) == 0 {
-		template.DNSNames = []string{strings.ToLower(certInfo.Subject.CommonName)}
 	}
 
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.Public(), key)

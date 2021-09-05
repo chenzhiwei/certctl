@@ -1,11 +1,13 @@
 # certctl
 
-Manage certificates with ease.
+Generate and sign TLS certificates with ease.
+
+Fetch TLS certificate from URL and show local certificate info.
 
 ## Download
 
 ```
-wget -O certctl https://github.com/chenzhiwei/certctl/releases/latest/download/certctl
+curl -LO https://github.com/chenzhiwei/certctl/releases/latest/download/certctl
 chmod +x certctl
 ./certctl version
 sudo mv certctl /usr/local/bin/

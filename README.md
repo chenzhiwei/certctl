@@ -81,3 +81,12 @@ certctl help sign
 certctl show cert-filepath.crt
 certctl show csr-filepath.csr
 ```
+
+## Fetch certificate from URL
+
+```
+certctl fetch 192.168.122.10:8443
+certctl fetch https://pkg.go.dev/io
+certctl fetch golang.org
+certctl fetch golang.org --file golang.org.crt --noout
+```

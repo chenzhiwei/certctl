@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -54,18 +55,6 @@ var extensionIDToName = map[string]string{
 	"2.5.29.33": "Policy Mappings",
 }
 
-func GetCertOrRequestInfo(bytes []byte) ([]map[string]string, error) {
-	block, _ := pem.Decode(bytes)
-	if block == nil {
-		return nil, fmt.Errorf("Failed to parse certificate or csr")
-	}
-	if block.Type == CertReqBlockType {
-		return GetCertRequestInfo(bytes)
-	} else {
-		return GetCertInfo(bytes)
-	}
-}
-
 func GetCertRequestInfo(bytes []byte) ([]map[string]string, error) {
 	block, _ := pem.Decode(bytes)
 	if block == nil {
@@ -97,15 +86,11 @@ func GetCertRequestInfo(bytes []byte) ([]map[string]string, error) {
 		}
 	}
 	if len(san) > 0 {
+		sort.Strings(san)
 		result = append(result, map[string]string{
 			"Alternative Name": strings.Join(san, ", "),
 		})
 	}
-
-	// a certificate request can contain too many tings, no need to reinvent the wheel
-	result = append(result, map[string]string{
-		"\nCheck more info with": "openssl req -noout -text -in csr-filepath",
-	})
 
 	return result, nil
 }
@@ -154,6 +139,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 			}
 		}
 		if len(san) > 0 {
+			sort.Strings(san)
 			result = append(result, map[string]string{
 				"Subject Alt Name": strings.Join(san, ", "),
 			})
@@ -182,6 +168,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 				}
 			}
 
+			sort.Strings(ku)
 			result = append(result, map[string]string{
 				"Key Usage": strings.Join(ku, ", "),
 			})
@@ -198,6 +185,7 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 				}
 			}
 
+			sort.Strings(eku)
 			result = append(result, map[string]string{
 				"Extended Key Usage": strings.Join(eku, ", "),
 			})
@@ -216,11 +204,6 @@ func GetCertInfo(certBytes []byte) ([]map[string]string, error) {
 			}
 		}
 	}
-
-	// a certificate can contain too many tings, no need to reinvent the wheel
-	result = append(result, map[string]string{
-		"\nCheck more info with": "openssl x509 -noout -text -in cert-filepath",
-	})
 
 	return result, nil
 }

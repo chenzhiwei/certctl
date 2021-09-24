@@ -92,3 +92,11 @@ certctl fetch https://pkg.go.dev/io
 certctl fetch golang.org
 certctl fetch golang.org --file golang.org.crt --noout
 ```
+
+## Verify certificate with CA and/or private key
+
+```
+certctl verify --cert domain.crt --ca ca.crt
+certctl verify --cert domain.crt --key domain.key
+certctl verify --cert domain.crt --key domain.key --ca ca.crt
+```

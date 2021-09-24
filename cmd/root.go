@@ -17,6 +17,7 @@ func init() {
 	rootCmd.AddCommand(fetchCmd)
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(signCmd)
+	rootCmd.AddCommand(verifyCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(generateCmd)
 }

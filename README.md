@@ -1,8 +1,12 @@
 # certctl
 
-Generate and sign TLS certificates with ease.
+certctl is a certificate utility tool, it can:
 
-Fetch TLS certificate from URL and show local certificate info.
+1. Generate Root CA certificate or self-signed certificate
+2. Sign certificate with CA certificate
+3. Show certificate or certificate signing request info
+4. Fetch certificate from an HTTPS URL
+5. Verify if a certificate matches the private key or CA certificate
 
 ## Download
 
@@ -16,7 +20,7 @@ sudo mv certctl /usr/local/bin/
 ## Generate CA or Self-signed certificate
 
 ```
-certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Any Root" \
+certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root-CA" \
     --key ca.key --cert ca.crt --days 36500 --size 4096
 
 certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=anycorp.com" \
@@ -93,7 +97,7 @@ certctl fetch golang.org
 certctl fetch golang.org --file golang.org.crt --noout
 ```
 
-## Verify certificate with CA and/or private key
+## Verify certificate with private key and/or CA certificate
 
 ```
 certctl verify --cert domain.crt --ca ca.crt

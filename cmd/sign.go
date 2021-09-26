@@ -24,9 +24,49 @@ var (
 	caKeyfile       string
 	caCertfile      string
 
+	signLong string = `Sign a certificate with CA certificate.
+
+Examples:
+  # Sign a certificate with CA certificate
+  certctl sign --ca-key ca.key --ca-cert ca.crt --subject "CN=anycorp.com" \
+      --san anycorp.com,www.anycorp.com,localhost,127.0.0.1 \
+      --key anycorp.com.key --cert anycorp.com.crt \
+      --usage digitalSignature,keyEncipherment \
+      --extusage serverAuth,clientAuth \
+      --days 730 --size 4096
+
+The list of key usages are:
+  * digitalSignature
+  * contentCommitment
+  * keyEncipherment
+  * dataEncipherment
+  * keyAgreement
+  * keyCertSign
+  * cRLSign
+  * encipherOnly
+  * decipherOnly
+
+The list of extended key usages are:
+  * any
+  * serverAuth
+  * clientAuth
+  * codeSigning
+  * emailProtection
+  * IPSECEndSystem
+  * IPSECTunnel
+  * IPSECUser
+  * timeStamping
+  * OCSPSigning
+  * netscapeServerGatedCrypto
+  * microsoftServerGatedCrypto
+  * microsoftCommercialCodeSigning
+  * microsoftKernelCodeSigning
+`
+
 	signCmd = &cobra.Command{
 		Use:   "sign",
 		Short: "sign certificate with CA",
+		Long:  signLong,
 		Args:  cobra.MaximumNArgs(0),
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := runSign(); err != nil {

@@ -20,9 +20,49 @@ var (
 	keyfile     string
 	certfile    string
 
+	generateLong string = `Generate Root CA certificate or self-signed certificate.
+
+Examples:
+  # Generate Root CA certificate
+  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root-CA" --key ca.key --cert ca.crt \
+      --usage cRLSign,keyCertSign,digitalSignature --extusage serverAuth,clientAuth --days 36500 --size 4096
+
+  # Generate self-signed certificate
+  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=any.com" --key any.com.key --cert any.com.crt \
+      --san "any.com,*.any.com,localhost,127.0.0.1" --days 730 --size 4096
+
+The list of key usages are:
+  * digitalSignature
+  * contentCommitment
+  * keyEncipherment
+  * dataEncipherment
+  * keyAgreement
+  * keyCertSign
+  * cRLSign
+  * encipherOnly
+  * decipherOnly
+
+The list of extended key usages are:
+  * any
+  * serverAuth
+  * clientAuth
+  * codeSigning
+  * emailProtection
+  * IPSECEndSystem
+  * IPSECTunnel
+  * IPSECUser
+  * timeStamping
+  * OCSPSigning
+  * netscapeServerGatedCrypto
+  * microsoftServerGatedCrypto
+  * microsoftCommercialCodeSigning
+  * microsoftKernelCodeSigning
+`
+
 	generateCmd = &cobra.Command{
 		Use:   "generate",
 		Short: "generate CA or self-signed certificate",
+		Long:  generateLong,
 		Args:  cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := runGenerate(); err != nil {

@@ -94,10 +94,11 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA 
 	}
 	certInfo.ExtKeyUsage = extKeyUsage
 
-	// if no eku specified, add serverAuth EKU
-	// otherwise users know what eku is and they should responsible for serverAuth EKU
+	// if no eku specified, add clientAuth and serverAuth EKU
+	// otherwise users know what eku is and they should responsible for clientAuth and serverAuth EKU
 	if len(certInfo.ExtKeyUsage) == 0 {
 		certInfo.ExtKeyUsage = append(certInfo.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
+		certInfo.ExtKeyUsage = append(certInfo.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
 	}
 
 	certInfo.Duration = duration

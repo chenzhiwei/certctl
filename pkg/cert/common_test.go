@@ -32,7 +32,7 @@ func TestNewCertInfo(t *testing.T) {
 				DNSNames:    []string{"localhost", "china.com"},
 				IPAddrs:     []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(1, 1, 1, 1)},
 				KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-				ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+				ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 			},
 		},
 		{

@@ -86,23 +86,32 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA 
 	if isCA {
 		keyUsage |= x509.KeyUsageCertSign
 	}
-	certInfo.KeyUsage = keyUsage
+
+	// Add default KeyUsage to the certificate
+	certInfo.KeyUsage = keyUsage | x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 
 	extKeyUsage, err := getExtKeyUsage(extUsage)
 	if err != nil {
 		return nil, err
 	}
+
+	// Add default ExtKeyUsage to the certificate
+	extKeyUsage = appendEKU(extKeyUsage, x509.ExtKeyUsageServerAuth)
+	extKeyUsage = appendEKU(extKeyUsage, x509.ExtKeyUsageClientAuth)
+
 	certInfo.ExtKeyUsage = extKeyUsage
 
-	// if no eku specified, add clientAuth and serverAuth EKU
-	// otherwise users know what eku is and they should responsible for clientAuth and serverAuth EKU
-	if len(certInfo.ExtKeyUsage) == 0 {
-		certInfo.ExtKeyUsage = append(certInfo.ExtKeyUsage, x509.ExtKeyUsageServerAuth)
-		certInfo.ExtKeyUsage = append(certInfo.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
-	}
-
 	certInfo.Duration = duration
-	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san, subject.CommonName)
+	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san)
+
+	// Add CommonName to DNSNames or IPs
+	if len(certInfo.DNSNames) == 0 && len(certInfo.IPAddrs) == 0 {
+		if ip := net.ParseIP(certInfo.Subject.CommonName); ip != nil {
+			certInfo.IPAddrs = append(certInfo.IPAddrs, ip)
+		} else {
+			certInfo.DNSNames = append(certInfo.DNSNames, strings.ToLower(certInfo.Subject.CommonName))
+		}
+	}
 
 	return certInfo, nil
 }
@@ -169,6 +178,22 @@ func ParseKey(keyBytes []byte) (interface{}, error) {
 	}
 
 	return key, nil
+}
+
+func appendEKU(ekus []x509.ExtKeyUsage, eku x509.ExtKeyUsage) []x509.ExtKeyUsage {
+	found := false
+	for _, e := range ekus {
+		if e == eku {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return append(ekus, eku)
+	}
+
+	return ekus
 }
 
 func getSerialNumber() (*big.Int, error) {
@@ -241,9 +266,7 @@ func getSubject(subject string) (*pkix.Name, error) {
 }
 
 func getKeyUsage(usage string) (x509.KeyUsage, error) {
-	// ECDSA, ED25519 and RSA subject keys should have the DigitalSignature
-	// RSA subject keys should have the KeyEncipherment
-	keyUsage := x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
+	var keyUsage x509.KeyUsage
 	usages := strings.Split(usage, ",")
 
 	invalid := false
@@ -294,7 +317,7 @@ func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
 		for k, v := range ekuStringToAction {
 			if strings.ToLower(key) == strings.ToLower(k) {
 				isInvalidKey = false
-				extKeyUsages = append(extKeyUsages, v)
+				extKeyUsages = appendEKU(extKeyUsages, v)
 				break
 			}
 		}
@@ -312,7 +335,7 @@ func getExtKeyUsage(usage string) ([]x509.ExtKeyUsage, error) {
 	return extKeyUsages, nil
 }
 
-func getDNSNamesAndIPAddrs(s, cn string) ([]string, []net.IP) {
+func getDNSNamesAndIPAddrs(s string) ([]string, []net.IP) {
 	var dnsNames []string
 	var ips []net.IP
 
@@ -334,14 +357,6 @@ func getDNSNamesAndIPAddrs(s, cn string) ([]string, []net.IP) {
 			if !containString(dnsNames, host) {
 				dnsNames = append(dnsNames, host)
 			}
-		}
-	}
-
-	if len(dnsNames) == 0 && len(ips) == 0 {
-		if ip := net.ParseIP(cn); ip != nil {
-			ips = append(ips, ip)
-		} else {
-			dnsNames = append(dnsNames, strings.ToLower(cn))
 		}
 	}
 

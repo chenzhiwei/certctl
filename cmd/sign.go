@@ -21,19 +21,20 @@ var (
 	certExtKeyUsage string
 	certKeyfile     string
 	certCertfile    string
-	caKeyfile       string
-	caCertfile      string
+	certCAKeyfile   string
+	certCACertfile  string
 
 	signLong string = `Sign a certificate with CA certificate.
 
 Examples:
   # Sign a certificate with CA certificate
-  certctl sign --ca-key ca.key --ca-cert ca.crt --subject "CN=anycorp.com" \
+  certctl sign --ca-key ca.key --ca-cert ca.crt \
+      --subject "CN=anycorp.com" \
       --san anycorp.com,www.anycorp.com,localhost,127.0.0.1 \
       --key anycorp.com.key --cert anycorp.com.crt \
       --usage digitalSignature,keyEncipherment \
       --extusage serverAuth,clientAuth \
-      --days 730 --size 4096
+      --days 730 --size 2048
 
 The list of key usages are:
   * digitalSignature
@@ -65,7 +66,7 @@ The list of extended key usages are:
 
 	signCmd = &cobra.Command{
 		Use:   "sign",
-		Short: "sign certificate with CA",
+		Short: "Sign certificate with CA",
 		Long:  signLong,
 		Args:  cobra.MaximumNArgs(0),
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -78,7 +79,7 @@ The list of extended key usages are:
 )
 
 func init() {
-	signCmd.Flags().BoolVar(&certIsCA, "is-ca", false, "the signed certificate is CA cert or not")
+	signCmd.Flags().BoolVar(&certIsCA, "is-ca", false, "the signed certificate is CA cert or not(Immediate CA)")
 	signCmd.Flags().StringVar(&certSubject, "subject", "", "the certificate subject")
 	signCmd.Flags().StringVar(&certSan, "san", "", "the certificate subject alternate name")
 	signCmd.Flags().StringVar(&certKeyUsage, "usage", "", "the certificate key usage")
@@ -87,8 +88,8 @@ func init() {
 	signCmd.Flags().IntVar(&certSize, "size", 2048, "the certificate RSA private key size")
 	signCmd.Flags().StringVar(&certKeyfile, "key", "certctl-signed.key", "the output key file")
 	signCmd.Flags().StringVar(&certCertfile, "cert", "certctl-signed.crt", "the output cert file")
-	signCmd.Flags().StringVar(&caKeyfile, "ca-key", "", "the ca key file to sign certificate")
-	signCmd.Flags().StringVar(&caCertfile, "ca-cert", "", "the ca cert file to sign certificate")
+	signCmd.Flags().StringVar(&certCAKeyfile, "ca-key", "", "the ca key file to sign certificate")
+	signCmd.Flags().StringVar(&certCACertfile, "ca-cert", "", "the ca cert file to sign certificate")
 
 	signCmd.Flags().SortFlags = false
 	signCmd.MarkFlagRequired("subject")
@@ -97,7 +98,7 @@ func init() {
 }
 
 func runSign() error {
-	caKeyBytes, err := os.ReadFile(caKeyfile)
+	caKeyBytes, err := os.ReadFile(certCAKeyfile)
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func runSign() error {
 		return err
 	}
 
-	caCertBytes, err := os.ReadFile(caCertfile)
+	caCertBytes, err := os.ReadFile(certCACertfile)
 	if err != nil {
 		return err
 	}

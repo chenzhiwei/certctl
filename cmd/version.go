@@ -18,7 +18,7 @@ var (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "print the version number of certctl",
+	Short: "Print the version number of certctl",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("certctl build commit: ", buildCommit)
 		fmt.Println("certctl build version:", buildVersion)

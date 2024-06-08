@@ -18,7 +18,7 @@ var (
 
 	fetchCmd = &cobra.Command{
 		Use:   "fetch url",
-		Short: "fetch the certificate from url",
+		Short: "Fetch the certificate from url",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			if err := runFetch(args); err != nil {

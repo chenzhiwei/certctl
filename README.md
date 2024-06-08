@@ -2,11 +2,12 @@
 
 certctl is a certificate utility tool, it can:
 
-1. Generate Root CA certificate or self-signed certificate
-2. Sign certificate with CA certificate
-3. Show certificate or certificate signing request info
-4. Fetch certificate from an HTTPS URL
-5. Verify if a certificate matches the private key or CA certificate
+1. Generate Root CA certificate
+2. Generate self-signed certificate
+3. Sign certificate or Immediate CA with Root CA certificate
+4. Show certificate or certificate signing request info
+5. Fetch certificate from an HTTPS URL
+6. Verify if a certificate matches the private key or CA certificate
 
 ## Download
 
@@ -17,23 +18,58 @@ chmod +x certctl
 sudo mv certctl /usr/local/bin/
 ```
 
-## Generate CA or Self-signed certificate
+## Generate certificate
+
+### Generate Root CA certificate
 
 ```
-certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root-CA" \
-    --key ca.key --cert ca.crt --days 36500 --size 4096
+certctl genca --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root CA" \
+    --key ca.key --cert ca.crt \
+    --days 36500 --size 2048
 
-certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=anycorp.com" \
-    --san *.anycorp.com,localhost,127.0.0.1 \
-    --key anycorp.com.key --cert anycorp.com.crt --days 365 --size 4096
+# Set Key Usages and Extended Key usages manaully
+certctl genca --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root CA" \
+    --nodefault \
+    --key ca.key --cert ca.crt \
+    --san "root.com,*.root.com,localhost,127.0.0.1" \
+    --ku digitalSignature,keyCertSign --eku serverAuth \
+    --days 36500 --size 2048
 
-certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=anycorp.com" \
-    --san *.anycorp.com,localhost,127.0.0.1 \
-    --key anycorp.com.key --cert anycorp.com.crt --days 365 --size 4096 \
-    --usage digitalSignature,keyEncipherment \
-    --extusage serverAuth,clientAuth,emailProtection
+certctl help genca
+```
+
+### Generate self-signed Certificate
+
+```
+# Generate self-signed certificate
+certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=any.com" \
+    --san "any.com,*.any.com,localhost,127.0.0.1" \
+    --key any.com.key --cert any.com.crt \
+    --days 730 --size 2048
+
+# Set Key Usages and Extended Key usages manaully
+certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root CA" \
+    --nodefault --ku digitalSignature,keyCertSign --eku serverAuth \
+    --san "any.com,*.any.com,localhost,127.0.0.1" \
+    --key any.com.key --cert any.com.crt \
+    --days 730 --size 2048
 
 certctl help generate
+```
+
+### Sign a certificate with CA
+
+```
+# Sign a certificate with CA certificate
+certctl sign --ca-key ca.key --ca-cert ca.crt \
+    --subject "CN=anycorp.com" \
+    --san anycorp.com,www.anycorp.com,localhost,127.0.0.1 \
+    --key anycorp.com.key --cert anycorp.com.crt \
+    --usage digitalSignature,keyEncipherment \
+    --extusage serverAuth,clientAuth \
+    --days 730 --size 2048
+
+certctl help sign
 ```
 
 A full list a key usages are:
@@ -65,21 +101,6 @@ A full list of extended key usages are:
 * microsoftCommercialCodeSigning
 * microsoftKernelCodeSigning
 
-## Sign certificate with CA
-
-```
-certctl sign --ca-key ca.key --ca-cert ca.crt --subject "CN=my.anycorp.com" \
-    --san www.my.anycorp.com,localhost,127.0.0.1 \
-    --key my.anycorp.com.key --cert my.anycorp.com.crt
-
-certctl sign --ca-key ca.key --ca-cert ca.crt --is-ca \
-    --subject "CN=my.anycorp.com" \
-    --key my.anycorp.com.key --cert my.anycorp.com.crt \
-    --usage digitalSignature,keyEncipherment,keyCertSign \
-    --extusage serverAuth,codeSigning
-
-certctl help sign
-```
 
 ## Show certificate/csr from file
 

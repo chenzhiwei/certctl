@@ -17,7 +17,7 @@ var (
 
 	verifyCmd = &cobra.Command{
 		Use:   "verify",
-		Short: "verify certificate keypair and CA",
+		Short: "Verify certificate keypair and CA",
 		Args:  cobra.MaximumNArgs(0),
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := runVerify(); err != nil {

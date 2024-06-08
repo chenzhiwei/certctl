@@ -83,35 +83,16 @@ func NewCertInfo(duration time.Duration, sub, san, usage, extUsage string, isCA 
 	if err != nil {
 		return nil, err
 	}
-	if isCA {
-		keyUsage |= x509.KeyUsageCertSign
-	}
-
-	// Add default KeyUsage to the certificate
-	certInfo.KeyUsage = keyUsage | x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
+	certInfo.KeyUsage = keyUsage
 
 	extKeyUsage, err := getExtKeyUsage(extUsage)
 	if err != nil {
 		return nil, err
 	}
-
-	// Add default ExtKeyUsage to the certificate
-	extKeyUsage = appendEKU(extKeyUsage, x509.ExtKeyUsageServerAuth)
-	extKeyUsage = appendEKU(extKeyUsage, x509.ExtKeyUsageClientAuth)
-
 	certInfo.ExtKeyUsage = extKeyUsage
 
 	certInfo.Duration = duration
 	certInfo.DNSNames, certInfo.IPAddrs = getDNSNamesAndIPAddrs(san)
-
-	// Add CommonName to DNSNames or IPs
-	if len(certInfo.DNSNames) == 0 && len(certInfo.IPAddrs) == 0 {
-		if ip := net.ParseIP(certInfo.Subject.CommonName); ip != nil {
-			certInfo.IPAddrs = append(certInfo.IPAddrs, ip)
-		} else {
-			certInfo.DNSNames = append(certInfo.DNSNames, strings.ToLower(certInfo.Subject.CommonName))
-		}
-	}
 
 	return certInfo, nil
 }

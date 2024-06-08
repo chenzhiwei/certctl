@@ -19,6 +19,7 @@ func init() {
 	rootCmd.AddCommand(signCmd)
 	rootCmd.AddCommand(verifyCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(gencaCmd)
 	rootCmd.AddCommand(generateCmd)
 }
 

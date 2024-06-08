@@ -17,19 +17,25 @@ var (
 	subject     string
 	keyUsage    string
 	extKeyUsage string
+	noDefaults  bool
 	keyfile     string
 	certfile    string
 
-	generateLong string = `Generate Root CA certificate or self-signed certificate.
+	generateLong string = `Generate self-signed certificate.
 
 Examples:
-  # Generate Root CA certificate
-  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root-CA" --key ca.key --cert ca.crt \
-      --usage cRLSign,keyCertSign,digitalSignature --extusage serverAuth,clientAuth --days 36500 --size 4096
-
   # Generate self-signed certificate
-  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=any.com" --key any.com.key --cert any.com.crt \
-      --san "any.com,*.any.com,localhost,127.0.0.1" --days 730 --size 4096
+  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=any.com" \
+      --san "any.com,*.any.com,localhost,127.0.0.1" \
+      --key any.com.key --cert any.com.crt \
+      --days 730 --size 2048
+
+  # Set Key Usages and Extended Key usages manaully
+  certctl generate --subject "C=CN/ST=Beijing/L=Haidian/O=Any Corp/CN=Root CA" \
+      --nodefault --ku digitalSignature,keyCertSign --eku serverAuth \
+      --san "any.com,*.any.com,localhost,127.0.0.1" \
+      --key any.com.key --cert any.com.crt \
+      --days 730 --size 2048
 
 The list of key usages are:
   * digitalSignature
@@ -60,10 +66,11 @@ The list of extended key usages are:
 `
 
 	generateCmd = &cobra.Command{
-		Use:   "generate",
-		Short: "generate CA or self-signed certificate",
-		Long:  generateLong,
-		Args:  cobra.MaximumNArgs(0),
+		Use:     "generate",
+		Aliases: []string{"create", "gen"},
+		Short:   "Generate self-signed certificate",
+		Long:    generateLong,
+		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := runGenerate(); err != nil {
 				return err
@@ -76,10 +83,11 @@ The list of extended key usages are:
 func init() {
 	generateCmd.Flags().StringVar(&subject, "subject", "", "the certificate subject")
 	generateCmd.Flags().StringVar(&san, "san", "", "the certificate subject alternate names")
-	generateCmd.Flags().StringVar(&keyUsage, "usage", "", "the certificate key usage")
-	generateCmd.Flags().StringVar(&extKeyUsage, "extusage", "", "the certificate extended key usage")
+	generateCmd.Flags().StringVar(&keyUsage, "ku", "", "the certificate key usage")
+	generateCmd.Flags().StringVar(&extKeyUsage, "eku", "", "the certificate extended key usage")
 	generateCmd.Flags().IntVar(&days, "days", 365, "the certificate validation period")
 	generateCmd.Flags().IntVar(&size, "size", 2048, "the certificate RSA private key size")
+	generateCmd.Flags().BoolVar(&noDefaults, "nodefault", false, "do not set any default vaules")
 	generateCmd.Flags().StringVar(&keyfile, "key", "certctl.key", "the output key file")
 	generateCmd.Flags().StringVar(&certfile, "cert", "certctl.crt", "the output cert file")
 
@@ -90,12 +98,17 @@ func init() {
 func runGenerate() error {
 	duration := time.Hour * 24 * time.Duration(days)
 
-	certInfo, err := cert.NewCertInfo(duration, subject, san, keyUsage, extKeyUsage, true)
+	if !noDefaults {
+		keyUsage = "digitalSignature,keyEncipherment"
+		extKeyUsage = "serverAuth,clientAuth"
+	}
+
+	certInfo, err := cert.NewCertInfo(duration, subject, san, keyUsage, extKeyUsage, false)
 	if err != nil {
 		return err
 	}
 
-	certBytes, keyBytes, err := cert.NewCACertKey(certInfo, size)
+	certBytes, keyBytes, err := cert.NewCertKey(certInfo, size)
 	if err != nil {
 		return err
 	}

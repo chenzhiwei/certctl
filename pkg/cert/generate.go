@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
+func NewCertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {
 		return nil, nil, err
@@ -23,8 +23,8 @@ func NewCACertKey(certInfo *CertInfo, rsaKeySize int) ([]byte, []byte, error) {
 		NotAfter:              now.Add(certInfo.Duration).UTC(),
 		KeyUsage:              certInfo.KeyUsage,
 		ExtKeyUsage:           certInfo.ExtKeyUsage,
-		BasicConstraintsValid: true,
-		IsCA:                  true,
+		BasicConstraintsValid: certInfo.IsCA,
+		IsCA:                  certInfo.IsCA,
 		DNSNames:              certInfo.DNSNames,
 		IPAddresses:           certInfo.IPAddrs,
 	}

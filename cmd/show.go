@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/pem"
 	"fmt"
+	"io"
 	"os"
 	"text/tabwriter"
 
@@ -12,7 +13,7 @@ import (
 
 var (
 	showCmd = &cobra.Command{
-		Use:   "show cert-or-csr-filepath",
+		Use:   "show cert-or-csr-filepath or - from stdin",
 		Short: "Show certificate or certificate request info",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -26,12 +27,16 @@ var (
 
 func runShow(args []string) error {
 	file := args[0]
-	bytes, err := os.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
-		return err
+		if file == "-" {
+			data, err = io.ReadAll(os.Stdin)
+		} else {
+			return err
+		}
 	}
 
-	block, _ := pem.Decode(bytes)
+	block, _ := pem.Decode(data)
 	if block == nil {
 		return fmt.Errorf("Failed to parse certificate or csr")
 	}
@@ -39,12 +44,12 @@ func runShow(args []string) error {
 	var result []map[string]string
 
 	if block.Type == cert.CertReqBlockType {
-		result, err = cert.GetCertRequestInfo(bytes)
+		result, err = cert.GetCertRequestInfo(data)
 		if err != nil {
 			return err
 		}
 	} else if block.Type == cert.CertBlockType {
-		result, err = cert.GetCertInfo(bytes)
+		result, err = cert.GetCertInfo(data)
 		if err != nil {
 			return err
 		}
